@@ -23,13 +23,36 @@
 include_recipe "php"
 
 # install xdebug apache module
-php_pear "xdebug" do
-  version node['xdebug']['version']
-  action :install
+
+if platform?(%w{debian ubuntu})
+    package "php5-xdebug" do
+        action :install
+    end
+elsif platform?(%w{centos redhat fedora amazon scientific})
+    php_pear "xdebug" do
+        version node['xdebug']['version']
+        action :install
+    end
+end
+
+
+
+xdebug_template_dir = node['php']['ext_conf_dir']
+
+# use symlink on debian/ubuntu
+if platform?(%w{debian ubuntu})
+
+    xdebug_template_subdir = "../mods-available"
+
+    link "#{xdebug_template_dir}/20-xdebug.ini" do
+          to "#{xdebug_template_subdir}/xdebug.ini"
+    end
+
+    xdebug_template_dir.concat("/" + xdebug_template_subdir)
 end
 
 # copy over xdebug.ini to node
-template "#{node['php']['ext_conf_dir']}/xdebug.ini" do
+template "#{xdebug_template_dir}/xdebug.ini" do
   source "xdebug.ini.erb"
   owner "root"
   group "root"
@@ -39,6 +62,7 @@ template "#{node['php']['ext_conf_dir']}/xdebug.ini" do
   notifies :restart, resources("service[apache2]"), :delayed
 end
 
+
 file node['xdebug']['remote_log'] do
   owner "root"
   group "root"
@@ -46,7 +70,4 @@ file node['xdebug']['remote_log'] do
   action :create_if_missing
   not_if { node['xdebug']['remote_log'].empty? }
 end
-
-# TODO: somehow add this line to php.ini (is this necessary?)
-# zend_extension="/usr/local/php/modules/xdebug.so"
 
