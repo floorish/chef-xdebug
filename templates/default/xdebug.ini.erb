@@ -2,7 +2,7 @@
 ;
 ; This is a generated file, do not modify by hand
 
-zend_extension = <%= %x[ php -i | grep extension_dir | awk '{print $(NF)}' ].strip %>/xdebug.so
+zend_extension = <%= @extension_dir %>/xdebug.so
 
 ; -----------------------------------------------------------------------------
 ; xdebug.auto_trace
@@ -466,7 +466,7 @@ xdebug.remote_handler = <%= node['xdebug']['remote_handler'] %>
 ; is enabled.
 ; 
 ;
-xdebug.remote_host = <%= node['xdebug']['remote_host'] %>
+xdebug.remote_host = <%= @remote_host %>
 
 ; -----------------------------------------------------------------------------
 ; xdebug.remote_log

@@ -51,6 +51,17 @@ if platform?(%w{debian ubuntu})
     xdebug_template_dir.concat("/" + xdebug_template_subdir)
 end
 
+
+# get remote of the host
+remote_host = node['xdebug']['remote_host']
+if remote_host.nil?
+    ip = node[:network][:interfaces][:eth1][:addresses].detect{|k,v| v[:family] == "inet" }.first
+    remote_host = ip.gsub(/\.\d+$/, '.1')
+end
+
+# get php extension directory
+extension_dir = %x[ php -i | grep extension_dir | awk '{print $(NF)}' ].strip
+
 # copy over xdebug.ini to node
 template "#{xdebug_template_dir}/xdebug.ini" do
   source "xdebug.ini.erb"
@@ -59,6 +70,10 @@ template "#{xdebug_template_dir}/xdebug.ini" do
   mode 0644
   # TODO: Move logic from template to recipe later?
   # variable( :extension_dir => node['php']['php_extension_dir'] )
+  variables({
+      :extension_dir => extension_dir,
+      :remote_host => remote_host
+  })
   notifies :restart, resources("service[apache2]"), :delayed
 end
 
